@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: XXX # change XXX to the resource group of your public IP address - Copy the value of NODE_RESOURCEGROUP from .env file
+    service.beta.kubernetes.io/azure-dns-label-name: XXX # change XXX to the dns name associated with your public IP address - Copy the value of AKS_DNS from .env file 
+  name: svc-evs-triton
+  labels:
+    app: evs-triton
+spec:
+  loadBalancerIP: XX.XX.XX.XX # change XX to your public IP address created in node resource group - Copy the value of AKS_PUBLIC_IP_ADDRESS from .env file. 
+  type: LoadBalancer
+  ports:
+  - name: port8888
+    port: 8888
+  - name: port8000
+    port: 8000
+  selector:
+    app: evs-triton
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-evs-triton
+  namespace: default
+  labels:
+    app: evs-triton
+spec:
+  selector:
+    matchLabels:
+      app: evs-triton
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: evs-triton
+    spec:
+      containers:
+      - name: evs
+        image: evaamscontreg.azurecr.io/evsclient:demo-build
+        args: ["endpointLocal=127.0.0.1:8000", "endpointType=triton", "line=https://aka.ms/linesample"]
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 8888
+        volumeMounts:
+          - name: azure-evs
+            mountPath: /app/output
+        resources:
+          requests:
+            cpu: 1
+          limits:
+            cpu: 1
+      - name: triton
+        image: nvcr.io/nvidia/tritonserver:21.03-py3
+        args: ["tritonserver", "--model-repository=/models"]
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 8000
+          - containerPort: 8001
+          - containerPort: 8002
+        volumeMounts:
+          - name: azure-triton
+            mountPath: /models
+        resources:
+          requests:
+            cpu: 1
+          limits:
+            cpu: 1
+            nvidia.com/gpu: 1
+      volumes:
+      - name: azure-evs
+        azureFile:
+          secretName: azure-fileshare-secret # change to your File Share secret
+          shareName: XXX/output # change XXX to your File Share name
+          readOnly: false
+      - name: azure-triton
+        azureFile:
+          secretName: azure-fileshare-secret # change to your File Share secret
+          shareName: triton/model_repository
+          readOnly: true
+      # nodeSelector: # use only if you labelled nodes in the cluster
+      #   computetier: "1"

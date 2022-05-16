@@ -1,0 +1,102 @@
+{
+  "$schema-template": "2.0.0",
+  "modulesContent": {
+    "$edgeAgent": {
+      "properties.desired": {
+        "schemaVersion": "1.0",
+        "runtime": {
+          "type": "docker",
+          "settings": {
+            "minDockerVersion": "v1.25",
+            "loggingOptions": ""
+          }
+        },
+        "systemModules": {
+          "edgeAgent": {
+            "type": "docker",
+            "settings": {
+              "image": "mcr.microsoft.com/azureiotedge-agent:1.2",
+              "createOptions": {}
+            }
+          },
+          "edgeHub": {
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "mcr.microsoft.com/azureiotedge-hub:1.2",
+              "createOptions": {
+                "HostConfig": {
+                  "PortBindings": {
+                    "5671/tcp": [
+                      {
+                        "HostPort": "5671"
+                      }
+                    ],
+                    "8883/tcp": [
+                      {
+                        "HostPort": "8883"
+                      }
+                    ],
+                    "443/tcp": [
+                      {
+                        "HostPort": "443"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "modules": {
+          "evsclient": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "ghcr.io/edge-video-services/$EVSCLIENT_IMAGE",
+              "createOptions": "{\"Cmd\":[\"$EVSCLIENT_ENDPOINTLOCAL\",\"$EVSCLIENT_ENDPOINTTYPE\",\"$EVSCLIENT_LINE\",\"$EVSCLIENT_ENDPOINTREMOTE\",\"$EVSCLIENT_VIDEOURL\",\"$EVSCLIENT_SAMPLINGRATE\",\"$EVSCLIENT_CATEGORY\"],\"HostConfig\":{\"PortBindings\":{\"8888/tcp\":[{\"HostPort\":\"8888\"}]},\"Binds\":[\"$EVSCLIENT_OUTPUT_FOLDER_ON_DEVICE:/app/output\",\"$VIDEO_INPUT_FOLDER_ON_DEVICE:/app/media\"],\"Privileged\":true,\"LogConfig\":{\"Config\":{\"max-size\":\"100m\",\"max-file\":\"10\"}}}}"
+            },
+            "env": {
+              "Debug": {
+                "value": "True"
+              },
+              "DebugOutputFolder": {
+                "value": "/debugoutput"
+              }
+            }
+          },
+          "rocket": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "ghcr.io/edge-video-services/$ROCKET_IMAGE",
+              "createOptions": "{\"Cmd\":[\"$ROCKET_PIPELINE\",\"$ROCKET_LINE\"],\"HostConfig\":{\"PortBindings\":{\"7788/tcp\":[{\"HostPort\":\"7788\"}]},\"Binds\":[\"$ROCKET_OUTPUT_FOLDER_ON_DEVICE:/app/output\"],\"Privileged\":true,\"LogConfig\":{\"Config\":{\"max-size\":\"100m\",\"max-file\":\"10\"}}}}"
+            },
+            "env": {
+              "Debug": {
+                "value": "True"
+              },
+              "DebugOutputFolder": {
+                "value": "/debugoutput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "$edgeHub": {
+      "properties.desired": {
+        "schemaVersion": "1.0",
+        "routes": {},
+        "storeAndForwardConfiguration": {
+          "timeToLiveSecs": 7200
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+name: evs_conda_environment
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.6
+  - numpy
+  - pip
+  - pip:
+    - jupyter
+    - python-dotenv
+    - azure-iot-device
+    - azure-iot-hub
