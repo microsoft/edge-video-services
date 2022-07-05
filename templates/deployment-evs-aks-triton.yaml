@@ -37,8 +37,8 @@ spec:
     spec:
       containers:
       - name: evs
-        image: evaamscontreg.azurecr.io/evsclient:demo-build
-        args: ["endpointLocal=127.0.0.1:8000", "endpointType=triton", "line=https://aka.ms/linesample"]
+        image: ghcr.io/edge-video-services/evsclient:1.0
+        args: ["endpointLocal=127.0.0.1:8000", "endpointLocalVideoType=triton", "line=https://aka.ms/linesample"]
         imagePullPolicy: Always
         ports:
           - containerPort: 8888
